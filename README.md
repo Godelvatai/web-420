@@ -1,4 +1,4 @@
-# WEB 340 Node.js
+# WEB 420 Node.js
 
 ## Contributors
 
