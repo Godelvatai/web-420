@@ -63,19 +63,23 @@ app.get("/", async (req, res, next) => {
         <main>
           <div class="book">
             <h3>The Fellowship of the Ring</h3>
-            <p>Author: J. R. R. Tolkien  |  Genre: Fantasy</p>
+            <p>Author: J. R. R. Tolkien</p>
+          </div>
+          <div class="book">
+            <h3>Harry Potter and the Philosopher's Stone</h3>
+            <p>Author: J.K. Rowling</p>
           </div>
           <div class="book">
             <h3>The Two Towers</h3>
-            <p>Author: J. R. R. Tolkien  |  Genre: Fantasy</p>
+            <p>Author: J. R. R. Tolkien</p>
+          </div>
+          <div class="book">
+            <h3>Harry Potter and the Chamber of Secrets</h3>
+            <p>Author: J.K. Rowling</p>
           </div>
           <div class="book">
             <h3>The Return of the King</h3>
-            <p>Author: J. R. R. Tolkien  |  Genre: Fantasy</p>
-          </div>
-          <div class="book">
-            <h3>The Hobbit</h3>
-            <p>Author: J. R. R. Tolkien  |  Genre: Fantasy</p>
+            <p>Author: J. R. R. Tolkien</p>
           </div>
         </main>
       </div>
@@ -85,26 +89,21 @@ app.get("/", async (req, res, next) => {
   res.send(html); // Sends the HTML content to the client
  });
 
-// Catch 404 and forward to error handler
-app.use(function(err, req, res, next) {
-  next(createError(404));
-});
-
 // Route to get all books from mock database
-app.get("/api/books", async(req, res, next) => {
+app.get("/api/books", async (req, res, next) => {
   try {
     // Get array of all books and send it as the response
     const allBooks = await books.find();
     res.send(allBooks);
   } catch(err) {
     // Log error message and pass to next middleware
-    console.log(err);
+    console.error("Error: ", err.message);
     next(err);
   }
 });
 
 // Route to get a single book, matching by the book's id number
-app.get("/api/books/:id", async(req, res, next) => {
+app.get("/api/books/:id", async (req, res, next) => {
   try {
     // Parse id as int and store it in a variable
     let { id } = req.params;
@@ -120,9 +119,51 @@ app.get("/api/books/:id", async(req, res, next) => {
     res.send(book);
   } catch(err) {
     // Log error message and pass to next middleware
-    console.log(err);
+    console.error("Error: ", err.message);
     next(err);
   }
+});
+
+// Route to add a new book
+app.post("/api/books", async (req, res, next) => {
+  try {
+    const newBook = req.body;
+
+    const expectedKeys = ["id", "title", "author"];
+    const receivedKeys = Object.keys(newBook);
+
+    if(!receivedKeys.every(key => expectedKeys.includes(key)) || receivedKeys.length !== expectedKeys.length) {
+      console.error("Bad Request: Missing keys or extra keys", receivedKeys);
+      return next(createError(400, "Bad Request"));
+    }
+
+    const result = await books.insertOne(newBook);
+    res.status(201).send({ id: result.ops[0].id });
+  } catch(err) {
+    console.error("Error: ", err.message);
+    next(err);
+  }
+});
+
+// Route to delete a book from mock database
+app.delete("/api/books/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await books.deleteOne({ id: parseInt(id) });
+    res.status(204).send();
+  } catch(err) {
+    if(err.message === "No matching item found") {
+      return next(createError(410, "Book not found"));
+    }
+
+    console.error("Error: ", err.message);
+    next(err);
+  }
+});
+
+// Catch 404 and forward to error handler
+app.use(function(req, res, next) {
+  next(createError(404));
 });
 
 // Error handler
