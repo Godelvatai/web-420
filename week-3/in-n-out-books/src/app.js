@@ -13,8 +13,33 @@ const createError = require("http-errors");
 // Creates an Express application
 const app = express();
 
-// Require statement for mock database
+// Require statement for mock database files
 const books = require("../database/books");
+const users = require("../database/users");
+
+// Require statement and instance of Ajv package
+const Ajv = require("ajv");
+const ajv = new Ajv();
+
+// Ajv JSON Schema object for validation
+const securityQuestionsSchema = {
+  type: "object",
+  properties: {
+    securityQuestions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          answer: { type: "string" }
+        },
+        required: ["answer"],
+        additionalProperties: false
+      }
+    }
+  },
+  required: ["securityQuestions"],
+  additionalProperties: false
+};
 
 // app.use statements telling Express to parse incoming requests as JSON payloads
 // and to parse incoming urlencoded payloads
@@ -188,6 +213,75 @@ app.put("/api/books/:id", async (req, res, next) => {
     }
     console.error("Error: ", err.message);
     next(err)
+  }
+});
+
+// Route to login as an existing user
+app.post("/api/login", async (req, res, next) => {
+  try {
+    // Set user object to user variable
+    const user = req.body;
+
+    // Variables for key comparison
+    const expectedKeys = ["email", "password"];
+    const receivedKeys = Object.keys(user);
+
+    // Check that the user has the correct number of keys
+    if(!receivedKeys.every(key => expectedKeys.includes(key)) || receivedKeys.length !== expectedKeys.length) {
+      console.error("Bad Request: Missing keys or extra keys", receivedKeys);
+      return next(createError(400, "Bad Request"));
+    }
+
+    // Use variable to check for a matching user, set variable to null if one isn't found
+    let existingUser;
+    try {
+      existingUser = await users.findOne({ email: user.email });
+    } catch(err) {
+      existingUser = false;
+    }
+
+    // Return 404 error is the user was not found
+    if(existingUser === false) {
+      return next(createError(404, "User not found"));
+    }
+
+    // Compare the entered password to existing user's password
+    if(!bcrypt.compareSync(user.password, existingUser.password)) {
+      return next(createError(401, "Unauthorized"))
+    }
+
+    res.status(200).send({ message: "Authentication successful"});
+  } catch(err) {
+    console.error("Error: ", err.message);
+    next(err);
+  }
+});
+
+// Route to verify a user's security questions
+app.post("/api/users/:email/verify-security-question", async (req, res, next) => {
+  try {
+    const { email } = req.params;
+    const { securityQuestions } = req.body;
+
+    const validate = ajv.compile(securityQuestionsSchema);
+    const valid = validate(req.body);
+
+    if(!valid) {
+      console.error("Bad Request: Invalid request body", validate.errors);
+      return next(createError(400, "Bad Request"));
+    }
+
+    const user = await users.findOne({ email: email });
+
+    if(securityQuestions[0].answer !== user.securityQuestions[0].answer || securityQuestions[1].answer !== user.securityQuestions[1].answer || securityQuestions[2].answer !== user.securityQuestions[2].answer) {
+      console.error("Unauthorized: Security questions do not match");
+      return next(createError(401, "Unauthorized"));
+    }
+
+    res.status(200).send({ message: "Security questions successfully answered" });
+  } catch(err) {
+    console.error("Error: ", err.message);
+    next(err);
   }
 });
 
