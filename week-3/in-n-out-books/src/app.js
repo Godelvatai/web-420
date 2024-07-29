@@ -161,6 +161,36 @@ app.delete("/api/books/:id", async (req, res, next) => {
   }
 });
 
+// Route to update an existing book in the mock database
+app.put("/api/books/:id", async (req, res, next) => {
+  try {
+    let { id } = req.params;
+    id = parseInt(id);
+    let book = req.body;
+
+    if(isNaN(id)) {
+      return next(createError(400, "Input Was Not Valid. Id must be a number."));
+    }
+
+    const expectedKeys = ["id", "title", "author"];
+    const receivedKeys = Object.keys(book);
+
+    if(!receivedKeys.every(key => expectedKeys.includes(key)) || receivedKeys.length !== expectedKeys.length) {
+      console.error("Bad Request: Missing keys or extra keys", receivedKeys);
+      return next(createError(400, "Bad Request"));
+    }
+
+    const result = await books.updateOne({ id: id }, book);
+    res.status(204).send();
+  } catch(err) {
+    if(err.message === "No matching item found") {
+      return next(createError(404, "Book not found"));
+    }
+    console.error("Error: ", err.message);
+    next(err)
+  }
+});
+
 // Catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));

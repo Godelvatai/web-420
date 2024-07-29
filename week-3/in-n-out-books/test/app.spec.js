@@ -68,3 +68,47 @@ describe("Chapter 4: API Tests", () => {
     expect(res.statusCode).toEqual(204);
   });
 });
+
+// Test suite for week 6 assignment (Chapter 5 of textbook)
+describe("Chapter 5: API Tests", () => {
+  // Test case for updating a book in the mock database
+  it("Should update a book and return a 204-status code.", async () => {
+    const res = await request(app).put("/api/books/5").send({
+      id: 5,
+      title: "Harry Potter and the Prisoner of Azkaban",
+      author: "J.K. Rowling"
+    });
+
+    expect(res.statusCode).toEqual(204);
+  });
+
+  // Test case for status code 400 if entered id is not a number
+  it("Should return a 400 status code when updating a recipe with a non-numeric id.", async () => {
+    const res = await request(app).put("/api/books/foo").send({
+      title: "Test",
+      author: "Test"
+    });
+
+    expect(res.statusCode).toEqual(400);
+    expect(res.body.message).toEqual("Input Was Not Valid. Id must be a number.");
+  });
+
+  // Test case for status code 400 if trying to update a book with missing/extra keys
+  it("Should return a 400 status code when updating a recipe with missing keys or extra keys.", async () => {
+    const res1 = await request(app).put("/api/books/1").send({
+      title: "Test Book"
+    });
+
+    expect(res1.statusCode).toEqual(400);
+    expect(res1.body.message).toEqual("Bad Request");
+
+    const res2 = await request(app).put("/api/books/1").send({
+      title: "Test Book",
+      author: "Test Author",
+      extraKey: "extra"
+    });
+
+    expect(res2.statusCode).toEqual(400);
+    expect(res2.body.message).toEqual("Bad Request");
+  });
+});
