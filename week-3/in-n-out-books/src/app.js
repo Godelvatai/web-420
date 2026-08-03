@@ -76,7 +76,7 @@ app.get("/", async (req, res, next) => {
         .book h3 { margin-top: 0; }
         main a { color: #zf; text-decoration: none; }
         main a:hover { color: #EF5350; text-decoration: underline;}
-        footer { height: 100px; position: absolute; bottom: 0; left: 0; transform: translate(33%, 0); }
+        footer { height: 100px; background-color: #EF5350; padding: 25px; }
       </style>
     </head>
     <body>
