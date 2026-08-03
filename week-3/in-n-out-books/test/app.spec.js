@@ -112,3 +112,45 @@ describe("Chapter 5: API Tests", () => {
     expect(res2.body.message).toEqual("Bad Request");
   });
 });
+
+// Test suite for week 7 assignment (Chapter 6 of textbook)
+describe("Chapter 6: API Tests", () => {
+  // Test case for authenticating a user login
+  it("should log a user in and return a 200-status with 'Authentication successful' message.", async () => {
+    const res = await request(app).post("/api/login").send({
+      email: "harry@hogwarts.edu",
+      password: "potter"
+    });
+
+    expect(res.statusCode).toEqual(200);
+    expect(res.body.message).toEqual("Authentication successful");
+  });
+
+  // Test case for status 401 when a login has incorrect credentials
+  it("Should return a 401-status code with ‘Unauthorized’ message when logging in with incorrect credentials.", async () => {
+    const res = await request(app).post("/api/login").send({
+      email: "harry@hogwarts.edu",
+      password: "hedwig"
+    });
+
+    expect(res.statusCode).toEqual(401);
+    expect(res.body.message).toEqual("Unauthorized");
+  });
+
+  // Test case for status 400 if email or password are missing from login
+  it("Should return a 400-status code with ‘Bad Request’ when missing email or password.", async () => {
+    const res1 = await request(app).post("/api/login").send({
+      email: "harry@hogwarts.edu"
+    });
+
+    expect(res1.statusCode).toEqual(400);
+    expect(res1.body.message).toEqual("Bad Request");
+
+    const res2 = await request(app).post("/api/login").send({
+      password: "potter"
+    });
+
+    expect(res2.statusCode).toEqual(400);
+    expect(res2.body.message).toEqual("Bad Request");
+  });
+});

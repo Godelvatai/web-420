@@ -12,6 +12,7 @@ const bcrypt = require("bcryptjs");
 const createError = require("http-errors");
 
 const books = require("../database/books")
+const users = require("../database/users")
 
 // Creates an Express application
 const app = express();
@@ -99,6 +100,47 @@ app.get("/", async (req, res, next) => {
   `; // end HTML content for the landing page
   res.send(html); // Sends the HTML content to the client
  });
+
+// Route to login as an existing user
+app.post("/api/login", async (req, res, next) => {
+  try {
+    // Set user object to user variable
+    const user = req.body;
+
+    // Variables for key comparison
+    const expectedKeys = ["email", "password"];
+    const receivedKeys = Object.keys(user);
+
+    // Check that the user has the correct number of keys
+    if(!receivedKeys.every(key => expectedKeys.includes(key)) || receivedKeys.length !== expectedKeys.length) {
+      console.error("Bad Request: Missing keys or extra keys", receivedKeys);
+      return next(createError(400, "Bad Request"));
+    }
+
+    // Use variable to check for a matching user, set variable to null if one isn't found
+    let existingUser;
+    try {
+      existingUser = await users.findOne({ email: user.email });
+    } catch(err) {
+      existingUser = false;
+    }
+
+    // Return 404 error is the user was not found
+    if(existingUser === false) {
+      return next(createError(404, "User not found"));
+    }
+
+    // Compare the entered password to existing user's password
+    if(!bcrypt.compareSync(user.password, existingUser.password)) {
+      return next(createError(401, "Unauthorized"))
+    }
+
+    res.status(200).send({ message: "Authentication successful"});
+  } catch(err) {
+    console.error("Error: ", err.message);
+    next(err);
+  }
+});
 
 // Route to get all books from mock database
 app.get("/api/books", async(req, res, next) => {
