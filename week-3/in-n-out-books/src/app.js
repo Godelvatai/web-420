@@ -11,6 +11,8 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const createError = require("http-errors");
 
+const books = require("../database/books")
+
 // Creates an Express application
 const app = express();
 
@@ -91,6 +93,41 @@ app.get("/", async (req, res, next) => {
 // Catch 404 and forward to error handler
 app.use(function(err, req, res, next) {
   next(createError(404));
+});
+
+// Route to get all books from mock database
+app.get("/api/books", async(req, res, next) => {
+  try {
+    // Get array of all books and send it as the response
+    const allBooks = await books.find();
+    res.send(allBooks);
+  } catch(err) {
+    // Log error message and pass to next middleware
+    console.log(err);
+    next(err);
+  }
+});
+
+// Route to get a single book, matching by the book's id number
+app.get("/api/books/:id", async(req, res, next) => {
+  try {
+    // Parse id as int and store it in a variable
+    let { id } = req.params;
+    id = parseInt(id);
+
+    // Return 400 error if id is not a number
+    if(isNaN(id)) {
+      return next(createError(400, "Input Was Not Valid. Id must be a number."));
+    }
+
+    // Get the book from the mock database that matches the id entered and send the book as the response
+    const book = await books.findOne({ id: id });
+    res.send(book);
+  } catch(err) {
+    // Log error message and pass to next middleware
+    console.log(err);
+    next(err);
+  }
 });
 
 // Error handler
