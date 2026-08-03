@@ -154,3 +154,48 @@ describe("Chapter 6: API Tests", () => {
     expect(res2.body.message).toEqual("Bad Request");
   });
 });
+
+// Test suite for week 8 assignment (Chapter 7 of textbook)
+describe("Chapter 7: API Tests", () => {
+  // Test case for successful answered security questions
+  it("Should return a 200 status with ‘Security questions successfully answered’ message.", async () => {
+    const res = await request(app).post("/api/users/harry@hogwarts.edu/verify-security-question").send({
+      securityQuestions: [
+        { answer: "Hedwig" },
+        { answer: "Quidditch Through the Ages" },
+        { answer: "Evans" }
+      ]
+    });
+
+    expect(res.statusCode).toEqual(200);
+    expect(res.body.message).toEqual("Security questions successfully answered");
+  });
+
+  // Test case for status 400 if the entry does not pass the validator
+  it("should return 400 status code with 'Bad Request' message when the request body fails ajv validation.", async () => {
+    const res = await request(app).post("/api/users/harry@hogwarts.edu/verify-security-question").send({
+      securityQuestions: [
+        { question: "What is your pet's name?", answer: "Hedwig" },
+        { question: "What is your favorite book?", answer: "Quidditch Through the Ages" },
+        { question: "What is your mother's maiden name?", answer: "Evans" }
+      ]
+    });
+
+    expect(res.statusCode).toEqual(400);
+    expect(res.body.message).toEqual("Bad Request");
+  });
+
+  // Test case for status 401 if any of the entered answers are incorrect
+  it("should return 401 status code with 'Unauthorized' message when the security questions are incorrect.", async () => {
+    const res = await request(app).post("/api/users/harry@hogwarts.edu/verify-security-question").send({
+      securityQuestions: [
+        { answer: "Fluffy" },
+        { answer: "Quidditch Through the Ages" },
+        { answer: "Evans" }
+      ]
+    });
+
+    expect(res.statusCode).toEqual(401);
+    expect(res.body.message).toEqual("Unauthorized");
+  });
+});
