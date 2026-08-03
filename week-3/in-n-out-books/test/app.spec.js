@@ -43,3 +43,28 @@ describe("Chapter 3: API Tests", () => {
     expect(res.body.message).toEqual("Input Was Not Valid. Id must be a number.");
   });
 });
+
+// Test suite for week 5 assignment (Chapter 4 of textbook)
+describe("Chapter 4: API Tests", () => {
+  // Test case for adding a new book to mock database
+  it("Should return a 201-status code when adding a new book.", async () => {
+    const res = await request(app).post("/api/books").send({id: 6, title: "The Hobbit", author: "J. R. R. Tolkien"});
+
+    expect(res.statusCode).toEqual(201);
+  });
+
+  // Test case for 400 error when new book is missing title
+  it("Should return a 400-status code when adding a new book with missing title.", async () => {
+    const res = await request(app).post("/api/books").send({id: 7,  author: "J. R. R. Tolkien"});
+
+    expect(res.statusCode).toEqual(400);
+    expect(res.body.message).toEqual("Bad Request");
+  });
+
+  // Test case for deleting a book from mock database
+  it("Should return a 204-status code when deleting a book.", async () => {
+    const res = await request(app).delete("/api/books/6");
+
+    expect(res.statusCode).toEqual(204);
+  });
+});
